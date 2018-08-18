@@ -225,4 +225,4 @@ public class BinderHookHandler implements InvocationHandler {
 现在粘贴板一直返回的都是hooked
 
 demo地址
-https://github.com/attosoft/project/tree/master/[BinderHook](http://note.youdao.com/)
+https://github.com/attosoft/project/tree/master/BinderHook
