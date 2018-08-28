@@ -1,0 +1,12 @@
+//proto的版本
+syntax = "proto3";
+//如果设置生成的Java文件也将会自动存放到指定输出目录下的rock.example.com.model目录中。
+//如果没有设置，Java的包名则为package关键字指定的名称
+option java_package = "rock.example.com.model";
+//如果设置生成的java文件名为UserProto，如果没有设置默认名为.proto文件名
+option java_outer_classname = "UserProto";
+message UserData {
+    int64 id = 1;
+    string name = 2;
+    string msg = 3;
+}
