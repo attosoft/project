@@ -23,7 +23,6 @@ import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 
 import android.os.Build;
 import android.os.Bundle;
@@ -39,14 +38,14 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
-import net.openmob.mobileimsdk.android.conf.ConfigEntity;
 import net.openmob.mobileimsdk.android.core.LocalUDPDataSender;
-import net.openmob.mobileimsdk.android.core.LocalUDPSocketProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,8 +53,8 @@ import java.util.Observable;
 import java.util.Observer;
 
 import cn.id0755.im.R;
-import cn.id0755.im.event.IMClientManager;
-import cn.id0755.im.utils.PhoneUtils;
+import cn.id0755.im.manager.IMClientManager;
+import cn.id0755.im.store.ConfigSp;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
@@ -77,16 +76,15 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private static final String[] DUMMY_CREDENTIALS = new String[]{
             "13510773022", "13510773033"
     };
-    /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
-    private UserLoginTask mAuthTask = null;
 
     // UI references.
     private AutoCompleteTextView mPhoneView;
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+
+    private CheckBox mAutoLogin;
+    private CheckBox mRememberPassword;
 
     /**
      * 登陆进度提示
@@ -103,9 +101,26 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
-        mPhoneView = (AutoCompleteTextView) findViewById(R.id.phone);
+        initView();
         populateAutoComplete();
 
+        //获取本机手机号码
+//        String phoneNumber = PhoneUtils.getLocalPhoneNumber(this);
+//        if (!TextUtils.isEmpty(phoneNumber)){
+//            mPhoneView.setText(phoneNumber);
+//        }
+        mPhoneView.setText("13510773022");
+        mPasswordView.setText("123456");
+
+
+        // 登陆有关的初始化工作
+        initForLogin();
+    }
+
+    private void initView(){
+        mPhoneView = (AutoCompleteTextView) findViewById(R.id.phone);
+        mLoginFormView = findViewById(R.id.login_form);
+        mProgressView = findViewById(R.id.login_progress);
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -126,23 +141,22 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
-
-//        String phoneNumber = PhoneUtils.getLocalPhoneNumber(this);
-//        if (!TextUtils.isEmpty(phoneNumber)){
-//            mPhoneView.setText(phoneNumber);
-//        }
-        mPhoneView.setText("13510773022");
-        mPasswordView.setText("123456");
-
-
-        // 确保MobileIMSDK被初始化哦（整个APP生生命周期中只需调用一次哦）
-        // 提示：在不退出APP的情况下退出登陆后再重新登陆时，请确保调用本方法一次，不然会报code=203错误哦！
-        IMClientManager.getInstance(this).initMobileIMSDK();
-
-        // 登陆有关的初始化工作
-        initForLogin();
+        mAutoLogin = findViewById(R.id.auto_login);
+        mAutoLogin.setChecked(ConfigSp.getConfigSp().getAutoLogin());
+        mAutoLogin.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                ConfigSp.getConfigSp().setAutoLogin(isChecked);
+            }
+        });
+        mRememberPassword = findViewById(R.id.remember_password);
+        mRememberPassword.setChecked(ConfigSp.getConfigSp().getRememberPsw());
+        mRememberPassword.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                ConfigSp.getConfigSp().setRememberPsw(isChecked);
+            }
+        });
     }
 
     private void initForLogin() {
@@ -271,27 +285,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private void doLogin() {
         if (!CheckNetworkState())
             return;
-
-        // 设置服务器地址和端口号
-        String serverIP = "172.20.205.60";
-        String serverPort = "7901";
-        if (!(serverIP.trim().length() <= 0)
-                && !(serverPort.trim().length() <= 0)) {
-            // 无条件重置socket，防止首次登陆时用了错误的ip或域名，下次登陆时sendData中仍然使用老的ip
-            // 说明：本行代码建议仅用于Demo时，生产环境下是没有意义的，因为你的APP里不可能连IP都搞错了
-            LocalUDPSocketProvider.getInstance().closeLocalUDPSocket();
-
-            ConfigEntity.serverIP = serverIP.trim();
-            try {
-                ConfigEntity.serverUDPPort = Integer.parseInt(serverPort.trim());
-            } catch (Exception e2) {
-                Toast.makeText(getApplicationContext(), "请输入合法的端口号！", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        } else {
-            Toast.makeText(getApplicationContext(), "请确保服务端地址和端口号都不为空！", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         // 发送登陆数据包
         if (mPhoneView.getText().toString().trim().length() > 0) {
@@ -462,10 +455,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
-        if (mAuthTask != null) {
-            return;
-        }
-
         // Reset errors.
         mPhoneView.setError(null);
         mPasswordView.setError(null);
@@ -478,7 +467,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         View focusView = null;
 
         // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+        if (!TextUtils.isEmpty(password) && password.length() < 6) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
             cancel = true;
@@ -489,7 +478,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             mPhoneView.setError(getString(R.string.error_field_required));
             focusView = mPhoneView;
             cancel = true;
-        } else if (!isPhoneValid(phone)) {
+        } else if (!PhoneNumberUtils.isGlobalPhoneNumber(phone)) {
             mPhoneView.setError(getString(R.string.error_invalid_phone));
             focusView = mPhoneView;
             cancel = true;
@@ -502,21 +491,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         } else {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
-            showProgress(true);
-//            mAuthTask = new UserLoginTask(phone, password);
-//            mAuthTask.execute((Void) null);
             doLogin();
         }
-    }
-
-    private boolean isPhoneValid(String phoneNumber) {
-        //TODO: Replace this with your own logic
-        return PhoneNumberUtils.isGlobalPhoneNumber(phoneNumber);
-    }
-
-    private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
-        return password.length() >= 6;
     }
 
     /**
@@ -564,7 +540,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
                 // Select only email addresses.
                 ContactsContract.Contacts.Data.MIMETYPE +
-                        " = ?", new String[]{ContactsContract.CommonDataKinds.Email
+                        " = ?", new String[]{ContactsContract.CommonDataKinds.Phone
                 .CONTENT_ITEM_TYPE},
 
                 // Show primary email addresses first. Note that there won't be
@@ -607,49 +583,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         int ADDRESS = 0;
         int IS_PRIMARY = 1;
-    }
-
-    /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
-     */
-    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
-
-        private final String mEmail;
-        private final String mPassword;
-
-        UserLoginTask(String email, String password) {
-            mEmail = email;
-            mPassword = password;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-//            doLogin();
-            return true;
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            mAuthTask = null;
-            showProgress(false);
-
-            if (success) {
-                Intent intent = new Intent();
-                intent.setClass(LoginActivity.this,MainActivity.class);
-                startActivity(intent);
-                finish();
-            } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            mAuthTask = null;
-            showProgress(false);
-        }
     }
 }
 

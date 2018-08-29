@@ -32,7 +32,7 @@ import java.util.concurrent.Executors;
 
 import cn.id0755.im.R;
 import cn.id0755.im.TimeClient;
-import cn.id0755.im.event.IMClientManager;
+import cn.id0755.im.manager.IMClientManager;
 
 public class MainActivity extends AppCompatActivity {
     private final static String TAG = "MainActivity";

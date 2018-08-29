@@ -17,4 +17,6 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="action_remember_password">记住密码</string>
+    <string name="action_auto_login">自动登录</string>
 </resources>

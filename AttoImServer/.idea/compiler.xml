@@ -9,8 +9,5 @@
         <module name="AttoImServer" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="AttoImServer" target="1.5" />
-    </bytecodeTargetLevel>
   </component>
 </project>

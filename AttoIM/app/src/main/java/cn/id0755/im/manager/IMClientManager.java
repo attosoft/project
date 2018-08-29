@@ -13,12 +13,16 @@
  * IMClientManager.java at 2017-5-1 21:08:44, code by Jack Jiang.
  * You can contact author with jack.jiang@52im.net or jb2011@163.com.
  */
-package cn.id0755.im.event;
+package cn.id0755.im.manager;
 
 import android.content.Context;
 
 import net.openmob.mobileimsdk.android.ClientCoreSDK;
 import net.openmob.mobileimsdk.android.conf.ConfigEntity;
+
+import cn.id0755.im.event.ChatBaseEventImpl;
+import cn.id0755.im.event.ChatTransDataEventImpl;
+import cn.id0755.im.event.MessageQoSEventImpl;
 
 public class IMClientManager
 {
@@ -60,14 +64,14 @@ public class IMClientManager
 			
 			// 设置服务器ip和服务器端口
 //			ConfigEntity.serverIP = "192.168.82.138";
-//			ConfigEntity.serverIP = "rbcore.openmob.net";
-//			ConfigEntity.serverUDPPort = 7901;
+			ConfigEntity.serverIP = "rbcore.52im.net";
+			ConfigEntity.serverUDPPort = 7901;
 	    
 			// MobileIMSDK核心IM框架的敏感度模式设置
 //			ConfigEntity.setSenseMode(SenseMode.MODE_10S);
 	    
 			// 开启/关闭DEBUG信息输出
-//	    	ClientCoreSDK.DEBUG = false;
+	    	ClientCoreSDK.DEBUG = true;
 			
 			// 【特别注意】请确保首先进行核心库的初始化（这是不同于iOS和Java端的地方)
 			ClientCoreSDK.getInstance().init(this.context);

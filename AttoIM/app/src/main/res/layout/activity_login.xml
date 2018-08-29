@@ -25,7 +25,7 @@
         android:layout_height="match_parent">
 
         <LinearLayout
-            android:id="@+id/email_login_form"
+            android:id="@+id/phone_login_form"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -62,7 +62,23 @@
                     android:singleLine="true" />
 
             </android.support.design.widget.TextInputLayout>
-
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_gravity="right"
+                android:gravity="right"
+                android:layout_height="wrap_content">
+                <CheckBox
+                    android:id="@+id/remember_password"
+                    android:text="@string/action_remember_password"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+                <CheckBox
+                    android:id="@+id/auto_login"
+                    android:text="@string/action_auto_login"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
             <Button
                 android:id="@+id/email_sign_in_button"
                 style="?android:textAppearanceSmall"
